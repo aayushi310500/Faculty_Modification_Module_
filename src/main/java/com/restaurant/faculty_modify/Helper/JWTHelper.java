@@ -17,6 +17,9 @@ public class JWTHelper {
     public String extractUsername(String token) {
         return exctractClaim(token, Claims::getSubject);
     }
+
+
+
     public Date exctractExpiration(String token) {
         return exctractClaim(token, Claims::getExpiration);
     }
@@ -24,6 +27,10 @@ public class JWTHelper {
     public <T> T exctractClaim(String token, Function<Claims ,T> claimsResolver){
         final Claims claims = exctractAllClaims(token);
         return claimsResolver.apply(claims);
+    }
+
+    public Long extractEmployeeId(String token) {
+        return exctractClaim(token, claims -> claims.get("employee_id", Long.class));
     }
 
     private Claims exctractAllClaims(String token){
@@ -34,8 +41,9 @@ public class JWTHelper {
         return exctractExpiration(token).before(new Date());
     }
 
-    public String generateToken(String username) {
+    public String generateToken(String username,int employeeId) {
         Map<String, Object> claims = new HashMap<>();
+        claims.put("employee_id", employeeId);
         return createToken(claims,username);
     }
 
@@ -43,6 +51,13 @@ public class JWTHelper {
         return Jwts.builder().setClaims(claims).setSubject(subject).setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 60)) // Token valid for 10 hours
                 .signWith(SignatureAlgorithm.HS256, SECRET_KEY).compact();
+    }
+
+    public String removeBearerFromToken(String token) {
+        if (token.startsWith("Bearer ")) {
+            token = token.substring(7);
+        }
+        return token;
     }
 
     public Boolean validateToken(String token) {
